@@ -50,13 +50,13 @@ int main( int argc, char** argv )
 		return 0;
 	}
 	
-        const char* Foldername = argv[1];
+        char* Foldername = argv[1];
        
 	// create detectNet
         int argc_fake = 3;
         char * argv_fake[4];
-        argv_fake[1] = "--prototxt=/home/sarcos/jetson-inference/models/20171201_drone/deploy.prototxt";
-        argv_fake[2] = "--model=/home/sarcos/jetson-inference/models/20171201_drone/snapshot_iter_7440.caffemodel";
+        argv_fake[1] = "--prototxt=/home/nvidia/jetson-inference/models/20171201_drone/deploy.prototxt";
+        argv_fake[2] = "--model=/home/nvidia/jetson-inference/models/20171201_drone/snapshot_iter_7440.caffemodel";
         argv_fake[3] = NULL;
 	detectNet* net = detectNet::Create(argc_fake, argv_fake);
 
@@ -69,7 +69,8 @@ int main( int argc, char** argv )
 	net->EnableProfiler();
 	
 	// alloc memory for bounding box & confidence value output arrays
-	const uint32_t maxBoxes = net->GetMaxBoundingBoxes();		printf("maximum bounding boxes:  %u\n", maxBoxes);
+	const uint32_t maxBoxes = net->GetMaxBoundingBoxes();
+	printf("maximum bounding boxes:  %u\n", maxBoxes);
 	const uint32_t classes  = net->GetNumClasses();
 	
 	float* bbCPU    = NULL;
@@ -96,8 +97,14 @@ int main( int argc, char** argv )
         if ((dir = opendir (Foldername)) != NULL) {
             /* print all the files and directories within directory */
             while ((ent = readdir (dir)) != NULL) {
-                printf ("%s\n", ent->d_name);
-                const char *imgFilename = ent->d_name; 
+                if(ent->d_type != DT_REG)
+                {
+                    continue;
+                }
+                char imgFilename[80];
+		strcpy(imgFilename, Foldername); 
+                strcat(imgFilename, ent->d_name); 
+                printf ("%s\n", imgFilename);
        
 	
 	        if( !loadImageRGBA(imgFilename, (float4**)&imgCPU, (float4**)&imgCUDA, &imgWidth, &imgHeight) )
@@ -115,7 +122,7 @@ int main( int argc, char** argv )
 
 	        if( !result )
 	        	printf("detectnet-console:  failed to classify '%s'\n", imgFilename);
-	        else if( argc > 2 )		// if the user supplied an output filename
+	        else
 	        {
 	        	printf("%i bounding boxes detected\n", numBoundingBoxes);
 	        	
@@ -142,7 +149,7 @@ int main( int argc, char** argv )
 	        	CUDA(cudaThreadSynchronize());
 	        	
 	        	// save image to disk
-	        	printf("detectnet-console:  writing %ix%i image to '%s'\n", imgWidth, imgHeight, argv[2]);
+	        	printf("detectnet-console:  writing %ix%i image to '%s'\n", imgWidth, imgHeight, imgFilename);
 	        	
 	        	if( !saveImageRGBA(imgFilename, (float4*)imgCPU, imgWidth, imgHeight, 255.0f) )
 	        		printf("detectnet-console:  failed saving %ix%i image to '%s'\n", imgWidth, imgHeight, imgFilename);
@@ -150,23 +157,19 @@ int main( int argc, char** argv )
 	        		printf("detectnet-console:  successfully wrote %ix%i image to '%s'\n", imgWidth, imgHeight, imgFilename);
 	        	
 	        }
-	        //printf("detectnet-console:  '%s' -> %2.5f%% class #%i (%s)\n", imgFilename, confidence * 100.0f, img_class, "pedestrian");
 
-
-     }
+	        CUDA(cudaFreeHost(imgCPU));
+            }
             closedir (dir);
-        } else {
+        }
+        else 
+        {
             /* could not open directory */
             perror ("");
             return EXIT_FAILURE;
         }
-
-
-
-
 	
 	printf("\nshutting down...\n");
-	CUDA(cudaFreeHost(imgCPU));
 	delete net;
 	return 0;
 }
