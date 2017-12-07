@@ -27,19 +27,15 @@
 
 
 #include <sys/time.h>
-
-
-uint64_t current_timestamp() {
-    struct timeval te; 
-    gettimeofday(&te, NULL); // get current time
-    return te.tv_sec*1000LL + te.tv_usec/1000; // caculate milliseconds
-}
+#include <string>
+#include <iostream>
+#include "dirent.h"
 
 
 // main entry point
 int main( int argc, char** argv )
 {
-	printf("detectnet-console\n  args (%i):  ", argc);
+	printf("detectnet-folder\n  args (%i):  ", argc);
 	
 	for( int i=0; i < argc; i++ )
 		printf("%i [%s]  ", i, argv[i]);
@@ -48,21 +44,25 @@ int main( int argc, char** argv )
 	
 	
 	// retrieve filename argument
-	if( argc < 2 )
+	if( argc != 2 )
 	{
-		printf("detectnet-console:   input image filename required\n");
+		printf("detectnet-folder:  wrong arguments. use with image folder\n");
 		return 0;
 	}
 	
-	const char* imgFilename = argv[1];
-	
-
+        const char* Foldername = argv[1];
+       
 	// create detectNet
-	detectNet* net = detectNet::Create(argc, argv);
+        int argc_fake = 3;
+        char * argv_fake[4];
+        argv_fake[1] = "--prototxt=/home/sarcos/jetson-inference/models/20171201_drone/deploy.prototxt";
+        argv_fake[2] = "--model=/home/sarcos/jetson-inference/models/20171201_drone/snapshot_iter_7440.caffemodel";
+        argv_fake[3] = NULL;
+	detectNet* net = detectNet::Create(argc_fake, argv_fake);
 
 	if( !net )
 	{
-		printf("detectnet-console:   failed to initialize detectNet\n");
+		printf("detectnet-folder:   failed to initialize detectNet\n");
 		return 0;
 	}
 
@@ -89,60 +89,81 @@ int main( int argc, char** argv )
 	float* imgCUDA   = NULL;
 	int    imgWidth  = 0;
 	int    imgHeight = 0;
-		
-	if( !loadImageRGBA(imgFilename, (float4**)&imgCPU, (float4**)&imgCUDA, &imgWidth, &imgHeight) )
-	{
-		printf("failed to load image '%s'\n", imgFilename);
-		return 0;
-	}
 	
-	// classify image
-	int numBoundingBoxes = maxBoxes;
+        
+        DIR *dir;
+        struct dirent *ent;
+        if ((dir = opendir (Foldername)) != NULL) {
+            /* print all the files and directories within directory */
+            while ((ent = readdir (dir)) != NULL) {
+                printf ("%s\n", ent->d_name);
+                const char *imgFilename = ent->d_name; 
+       
 	
-	printf("detectnet-console:  beginning processing network (%zu)\n", current_timestamp());
+	        if( !loadImageRGBA(imgFilename, (float4**)&imgCPU, (float4**)&imgCUDA, &imgWidth, &imgHeight) )
+	        {
+	        	printf("failed to load image '%s'\n", imgFilename);
+	        	return 0;
+	        }
+	        
+	        // classify image
+	        int numBoundingBoxes = maxBoxes;
+	        
 
-	const bool result = net->Detect(imgCUDA, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU);
+	        const bool result = net->Detect(imgCUDA, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU);
 
-	printf("detectnet-console:  finished processing network  (%zu)\n", current_timestamp());
 
-	if( !result )
-		printf("detectnet-console:  failed to classify '%s'\n", imgFilename);
-	else if( argc > 2 )		// if the user supplied an output filename
-	{
-		printf("%i bounding boxes detected\n", numBoundingBoxes);
-		
-		int lastClass = 0;
-		int lastStart = 0;
-		
-		for( int n=0; n < numBoundingBoxes; n++ )
-		{
-			const int nc = confCPU[n*2+1];
-			float* bb = bbCPU + (n * 4);
-			
-			printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]); 
-			
-			if( nc != lastClass || n == (numBoundingBoxes - 1) )
-			{
-				if( !net->DrawBoxes(imgCUDA, imgCUDA, imgWidth, imgHeight, bbCUDA + (lastStart * 4), (n - lastStart) + 1, lastClass) )
-					printf("detectnet-console:  failed to draw boxes\n");
-					
-				lastClass = nc;
-				lastStart = n;
-			}
-		}
-		
-		CUDA(cudaThreadSynchronize());
-		
-		// save image to disk
-		printf("detectnet-console:  writing %ix%i image to '%s'\n", imgWidth, imgHeight, argv[2]);
-		
-		if( !saveImageRGBA(argv[2], (float4*)imgCPU, imgWidth, imgHeight, 255.0f) )
-			printf("detectnet-console:  failed saving %ix%i image to '%s'\n", imgWidth, imgHeight, argv[2]);
-		else	
-			printf("detectnet-console:  successfully wrote %ix%i image to '%s'\n", imgWidth, imgHeight, argv[2]);
-		
-	}
-	//printf("detectnet-console:  '%s' -> %2.5f%% class #%i (%s)\n", imgFilename, confidence * 100.0f, img_class, "pedestrian");
+	        if( !result )
+	        	printf("detectnet-console:  failed to classify '%s'\n", imgFilename);
+	        else if( argc > 2 )		// if the user supplied an output filename
+	        {
+	        	printf("%i bounding boxes detected\n", numBoundingBoxes);
+	        	
+	        	int lastClass = 0;
+	        	int lastStart = 0;
+	        	
+	        	for( int n=0; n < numBoundingBoxes; n++ )
+	        	{
+	        		const int nc = confCPU[n*2+1];
+	        		float* bb = bbCPU + (n * 4);
+	        		
+	        		printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]); 
+	        		
+	        		if( nc != lastClass || n == (numBoundingBoxes - 1) )
+	        		{
+	        			if( !net->DrawBoxes(imgCUDA, imgCUDA, imgWidth, imgHeight, bbCUDA + (lastStart * 4), (n - lastStart) + 1, lastClass) )
+	        				printf("detectnet-console:  failed to draw boxes\n");
+	        				
+	        			lastClass = nc;
+	        			lastStart = n;
+	        		}
+	        	}
+	        	
+	        	CUDA(cudaThreadSynchronize());
+	        	
+	        	// save image to disk
+	        	printf("detectnet-console:  writing %ix%i image to '%s'\n", imgWidth, imgHeight, argv[2]);
+	        	
+	        	if( !saveImageRGBA(imgFilename, (float4*)imgCPU, imgWidth, imgHeight, 255.0f) )
+	        		printf("detectnet-console:  failed saving %ix%i image to '%s'\n", imgWidth, imgHeight, imgFilename);
+	        	else	
+	        		printf("detectnet-console:  successfully wrote %ix%i image to '%s'\n", imgWidth, imgHeight, imgFilename);
+	        	
+	        }
+	        //printf("detectnet-console:  '%s' -> %2.5f%% class #%i (%s)\n", imgFilename, confidence * 100.0f, img_class, "pedestrian");
+
+
+     }
+            closedir (dir);
+        } else {
+            /* could not open directory */
+            perror ("");
+            return EXIT_FAILURE;
+        }
+
+
+
+
 	
 	printf("\nshutting down...\n");
 	CUDA(cudaFreeHost(imgCPU));
