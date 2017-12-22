@@ -55,8 +55,8 @@ int main( int argc, char** argv )
 	// create detectNet
         int argc_fake = 3;
         char * argv_fake[4];
-        argv_fake[1] = "--prototxt=/home/nvidia/jetson-inference/models/20171201_drone/deploy.prototxt";
-        argv_fake[2] = "--model=/home/nvidia/jetson-inference/models/20171201_drone/snapshot_iter_7440.caffemodel";
+        argv_fake[1] = "--prototxt=/home/nvidia/jetson-inference/models/20171214_drone_stride_16/deploy.prototxt";
+        argv_fake[2] = "--model=/home/nvidia/jetson-inference/models/20171214_drone_stride_16/snapshot_iter_7440.caffemodel";
         argv_fake[3] = NULL;
 	detectNet* net = detectNet::Create(argc_fake, argv_fake);
 
