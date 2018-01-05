@@ -31,7 +31,7 @@
 #define OUTPUT_CVG  0
 #define OUTPUT_BBOX 1
 
-//#define DEBUG_CLUSTERING
+#define DEBUG_CLUSTERING
 
 
 // constructor
@@ -422,8 +422,10 @@ bool detectNet::Detect( float* rgba, uint32_t width, uint32_t height, float* bou
 		
 		for( uint32_t b = 0; b < numBox && n < numMax; b++ )
 		{
-			const float6 r = rects[z][b];
-			
+		    const float6 r = rects[z][b];
+                    float thresh = 15; //pixel threshold for size of detects
+                    if((r.z - r.x) < thresh || (r.w-r.y) < thresh)
+                    { 
 			boundingBoxes[n * 4 + 0] = r.x;
 			boundingBoxes[n * 4 + 1] = r.y;
 			boundingBoxes[n * 4 + 2] = r.z;
@@ -436,6 +438,7 @@ bool detectNet::Detect( float* rgba, uint32_t width, uint32_t height, float* bou
 			}
 			
 			n++;
+                    }
 		}
 	}
 	
