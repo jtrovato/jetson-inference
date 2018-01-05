@@ -143,9 +143,9 @@ bool detectNet::defaultColors()
 	{
 		if( n != 1 )
 		{
-			mClassColors[0][n*4+0] = 0.0f;	// r
-			mClassColors[0][n*4+1] = 200.0f;	// g
-			mClassColors[0][n*4+2] = 255.0f;	// b
+			mClassColors[0][n*4+0] = 150.0f;	// r
+			mClassColors[0][n*4+1] = 0.0f;	// g
+			mClassColors[0][n*4+2] = 0.0f;	// b
 			mClassColors[0][n*4+3] = 100.0f;	// a
 		}
 		else
@@ -236,7 +236,8 @@ detectNet* detectNet::Create( int argc, char** argv )
 		type = detectNet::COCO_DOG;
 	else
 	{
-		const char* prototxt = cmdLine.GetString("prototxt");
+		printf("actually aprsing args\n");
+                const char* prototxt = cmdLine.GetString("prototxt");
 		const char* input    = cmdLine.GetString("input_blob");
 		const char* out_cvg  = cmdLine.GetString("output_cvg");
 		const char* out_bbox = cmdLine.GetString("output_bbox");
@@ -247,7 +248,7 @@ detectNet* detectNet::Create( int argc, char** argv )
 		
 		float meanPixel = cmdLine.GetFloat("mean_pixel");
 		float threshold = cmdLine.GetFloat("threshold");
-		
+	        printf("thresh = %f\n", threshold);	
 		if( threshold == 0.0f )
 			threshold = 0.5f;
 		
@@ -453,9 +454,9 @@ bool detectNet::DrawBoxes( float* input, float* output, uint32_t width, uint32_t
 		return false;
 	
 	const float4 color = make_float4( mClassColors[0][classIndex*4+0], 
-									  mClassColors[0][classIndex*4+1],
-									  mClassColors[0][classIndex*4+2],
-									  mClassColors[0][classIndex*4+3] );
+				          mClassColors[0][classIndex*4+1],
+					  mClassColors[0][classIndex*4+2],
+					  mClassColors[0][classIndex*4+3] );
 	
 	printf("draw boxes  %i  %i   %f %f %f %f\n", numBoxes, classIndex, color.x, color.y, color.z, color.w);
 	
