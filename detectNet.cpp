@@ -458,7 +458,7 @@ bool detectNet::DrawBoxes( float* input, float* output, uint32_t width, uint32_t
 					  mClassColors[0][classIndex*4+2],
 					  mClassColors[0][classIndex*4+3] );
 	
-	printf("draw boxes  %i  %i   %f %f %f %f\n", numBoxes, classIndex, color.x, color.y, color.z, color.w);
+	//printf("draw boxes  %i  %i   %f %f %f %f\n", numBoxes, classIndex, color.x, color.y, color.z, color.w);
 	
 	if( CUDA_FAILED(cudaRectOutlineOverlay((float4*)input, (float4*)output, width, height, (float4*)boundingBoxes, numBoxes, color)) )
 		return false;
