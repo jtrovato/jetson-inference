@@ -1,0 +1,24 @@
+{
+    "caffe flavor": "NVIDIA",
+    "caffe version": "0.15.14",
+    "creation time": "2018-01-24 17:34:41.652399",
+    "dataset_id": "20180124-173237-8d65",
+    "deploy file": "deploy.prototxt",
+    "digits version": "6.0.0",
+    "framework": "caffe",
+    "id": "20180124-173441-de42",
+    "image dimensions": [
+        528,
+        960,
+        3
+    ],
+    "job id": "20180124-173441-de42",
+    "mean file": "mean.binaryproto",
+    "model file": "original.prototxt",
+    "name": "drone_model_20171110_newCUDA_960x528",
+    "snapshot file": "snapshot_iter_6448.caffemodel",
+    "solver file": "solver.prototxt",
+    "status": "Done",
+    "train_val file": "train_val.prototxt",
+    "username": "sarcos"
+}
